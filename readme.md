@@ -1,13 +1,13 @@
 
-![Poster](/Assests/posters/GST%20API.png)
+![Poster](/Assets/posters/Non-ideal%20iris%20images.png)
 
 # Iris Detector using OpenCV
 
-&emsp;&emsp; [Iris Detector](/IrisDetector) is a python project which just needs Python 3.7.0 Shell to detect iris region from any non ideal iris image. And it needs one more module of python which is easily available online called OpenCV. OpenCV has made computer vision in python very simple and convinient for students like us. <br />
+&emsp;&emsp; [Iris Detector](/IrisDetector.py) is a python project which just needs Python 3.7.0 Shell to detect iris region from any non ideal iris image. And it needs one more module of python which is easily available online called OpenCV. OpenCV has made computer vision in python very simple and convinient for students like us. <br />
 &emsp;&emsp; This c# class library has the capability of versatile software development and would make software development for GST returns simple and convinient. If used the sdk correctly can harness any big GST software and can be improvised since its open source. 
 
 # Tables of Content
-
+- [Data Set](#)
 - [Filters](#)
 - [Circular Edge Detector](#)
 - [Segmentation](#)
