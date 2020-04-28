@@ -1,5 +1,5 @@
 
-![Poster](/Assets/posters/Sample%20Output.png)
+![Poster](/Assets/posters/Sample%20Output.jpeg)
 
 # Iris Detector using OpenCV
 
