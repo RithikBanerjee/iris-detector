@@ -26,5 +26,5 @@ Need to complete all the steps of iris recognition which includes normalization,
 Python 3.7 & OpenCV 2.4
 
 #### How to test the project?
-Add your eye images in folder '_Demo Data_' & run the project.
+Add your eye images in [Demo Data](/DemoData) & run the project.
 
