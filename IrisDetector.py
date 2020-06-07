@@ -1,10 +1,66 @@
-import cv2 
-import numpy
+
 import os
-import math
+import cv2
+import numpy
 from math import hypot
-gamma = -48
-#gamma is -48 for UBIRIS database
+
+
+eye_images = []
+image_names = []
+
+#running the complete set of image database from the folder "DemoData"
+for filename in os.listdir("DemoData"):
+    if filename is not None:
+        image = cv2.imread(os.path.join("DemoData", filename), 1)
+        eye_images.append(image)
+        image_names.append(filename.split('.')[0])
+
+for i in range(len(eye_images)):
+    current_image_name = image_names[i]
+    current_image = eye_images[i]
+    #show input image
+    display_image(f"input_{current_image_name}", current_image)
+
+    #first step grabcut
+    background_removed_image = grab_cut(current_image)
+
+    #second step grayscale
+    grayscaled_image = grayscale(background_removed_image)
+    display_image(f"grab_cut_${current_image_name}", grayscaled_image)
+
+    #third step noise reduction for circular hough transform
+    inverted_grayscaled_image = invert_grayscale(grayscaled_image)
+    #enhance balck pixels intensity
+    blackhat_image = balckhat(inverted_grayscaled_image)
+    display_image(f"black_hat_{current_image_name}", blackhat_image)
+
+    #remove surface reflection points
+    removed_refection = cv2.add(inverted_grayscaled_image, blackhat_image)
+    image_without_reflection = median_blur(removed_refection)
+    display_image(f"median_blur_{current_image_name}", image_without_reflection)
+
+    #fourth step is to enhance the edges of the image
+    edged_image = canny_edge(image_without_reflection)
+    display_image(f"CED_{current_image_name}", edged_image)
+
+    #fifth step get circular images
+    circles = hough_circle(edged_image)
+    if circles is not None:
+        #six mark circles co-ordinates
+        inner_circle = draw_circle(circles, current_image)
+        display_image(f"hough_circle_{current_image_name}", current_image)
+        x, y = current_image.shape
+
+        #crop iris part from grayscale image
+        crop_image(x, y, inner_circle, grayscaled_image)
+        display_image(f"output_{current_image_name}", grayscaled_image)
+    cv2.destroyAllWindows()
+
+
+#show image window
+def display_image(caption, image):
+    cv2.imshow(caption, image)
+    cv2.waitKey(0)
 
 
 #method to differentiat foreground and background
@@ -17,73 +73,59 @@ def grab_cut(raw_image):
     mode_of_operation = cv2.GC_INIT_WITH_RECT
     cv2.grabCut(raw_image, channel_mask, region_of_interest, background_model, foreground_model, number_of_interation, mode_of_operation)
     normalization_mask = np.where((channelMask == 2)|(channelMask == 0), 0, 1).astype('uint8')
-    removed_background_image = rawImage*normalization_mask[:,:,numpy.newaxis]
+    removed_background_image = rawImage * (normalization_mask[:,:,numpy.newaxis])
     return removed_background_image
 
 
-#noise canceling method (pre CHT processing) 
-def noise_reduction(grayscaled_image, name_of_image):                             
-    inverted_grayscaled_image = cv2.bitwise_not(grayscaled_image)    
+#grayscale of image
+def grayscale(raw_image):
+    mode_of_operation = cv2.COLOR_BGR2GRAY
+    return cv2.cvtColor(raw_image, mode_of_operation)
+
+
+#pixel averaging of grayscale images
+def invert_grayscale(grayscaled_image):
+    return cv2.bitwise_not(grayscaled_image)
+
+
+#noise reduction technique 'balckhat'
+def balckhat(grayscaled_image):
     structure_kernel = numpy.ones((5, 5), numpy.uint8)
     mode_of_operation = cv2.MORPH_BLACKHAT
-    blackhat_image = cv2.morphologyEx(inverted_grayscaled_image, mode_of_operation, structure_kernel)
-    cv2.imshow("black_hat_"+name_of_image, blackhat_image)
-    cv2.waitKey(0)
-    
-    removed_refection = cv2.add(inverted_grayscaled_image, blackhat_image)
+    return cv2.morphologyEx(inverted_grayscaled_image, mode_of_operation, structure_kernel)
+
+
+#pixel with high white intensity are averaged
+def median_blur(raw_image):
     image_without_reflection = cv2.medianBlur(removed_refection, 5)
     cv2.equalizeHist(image_without_reflection)
-    cv2.imshow("median_blur_"+name_of_image, image_without_reflection)
-    cv2.waitKey(0)
+    return image_without_reflection
 
-    region_of_interest = cv2.bitwise_not(image_without_reflection)
+
+#detect edges by pixel intensity
+def canny_edge(raw_image):
+    region_of_interest = cv2.bitwise_not(raw_image)
     mode_of_operation = cv2.THRESH_BINARY_INV
     retval, thresholded_image = cv2.threshold(region_of_interest, 50, 255, mode_of_operation)
-    edged_image = cv2.Canny(thresholded_image, 200, 100)
-    cv2.imshow("CED_"+current_image_name, edged_image)
-    cv2.waitKey(0)
-    
-    return edged_image
+    return cv2.Canny(thresholded_image, 200, 100)
 
-eye_images = []
-image_names = []
- #running the complete set of image database from the folder "DemoData"
-for filename in os.listdir("Demo Data"):
-    if filename is not None:
-        image = cv2.imread(os.path.join("Demo Data",filename), 1)
-        eye_images.append(image)
-        image_names.append(filename.split('.')[0])
 
-for i in range(len(eye_images)):
-    current_image_name = image_names[i]
-    current_image = eye_images[i]
-    cv2.imshow("input_"+current_image_name, current_image)
-    cv2.waitKey(0)
-    
-    x, y, z = current_image.shape
-    background_removed_image = Grabcut(current_image)
-    mode_of_operation = cv2.COLOR_BGR2GRAY
-    grayscaled_image = cv2.cvtColor(background_removed_image, mode_of_operation)
-    cv2.imshow("grab_cut_"+current_image_name, grayscaled_image)
-    cv2.waitKey(0)
-
-    noise_removed_image = noise_reduction(grayscaled_image, current_image_name)
+#detects circular edges
+def hough_circles(edged_image):
     mode_of_operation = cv2.HOUGH_GRADIENT
-    circles = cv2.HoughCircles(noise_removed_image, mode_of_operation, 1, 20, param1 = 200, param2 = 20,minRadius =0)
-   
-    if circles is not None:
-        inner_circle = numpy.uint16(numpy.around(circles[0][0])).tolist()
-    cv2.circle(current_image ,(inner_circle[0],inner_circle[1]), inner_circle[2], (0,255,0), 1)
-    cv2.imshow("hough_circle_"+current_image_name, current_image)
-    cv2.waitKey(0)
-    
-#crop image by comparing each pixel dsitance from center with radius
-    for j in range(x):   
-        for k in range(y):
-            if hypot(k-inner_circle[0], j-inner_circle[1]) >= inner_circle[2]: 
-                grayscaled_image[j,k] = 0
-    cv2.imshow("output_"+current_image_name, grayscaled_image)
-    cv2.waitKey(0)
+    return cv2.HoughCircles(edged_image, mode_of_operation, 1, 20, param1 = 200, param2 = 20, minRadius = 0)
 
-    cv2.destroyAllWindows()
 
+#draws circles as per the co-ordinates given
+def draw_circle(circles, raw_image):
+    inner_circle = numpy.uint16(numpy.around(circles[0][0])).tolist()
+    cv2.circle(raw_image, (inner_circle[0], inner_circle[1]), inner_circle[2], (0, 255, 0), 1)
+    return inner_circle
+
+
+#get correct circle and crop image
+def crop_image(x_coordinate, y_coordinate, inner_circle, raw_image):
+    for j in range(x_coordinate):
+        for k in range(y_coordinate):
+            if hypot(k - inner_circle[0], j - inner_circle[1]) >= inner_circle[2]:
+                raw_image[j, k] = 0
