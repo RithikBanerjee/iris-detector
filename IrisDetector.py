@@ -24,13 +24,13 @@ for i in range(len(eye_images)):
     #first step grabcut
     background_removed_image = grab_cut(current_image)
 
-    #second step grayscale
+    #second step noise reduction for circular hough transform
+    #noise reduction on grayscaled image
     grayscaled_image = grayscale(background_removed_image)
     display_image(f"grab_cut_${current_image_name}", grayscaled_image)
-
-    #third step noise reduction for circular hough transform
     inverted_grayscaled_image = invert_grayscale(grayscaled_image)
-    #enhance balck pixels intensity
+    
+    #enhance black pixels intensity
     blackhat_image = balckhat(inverted_grayscaled_image)
     display_image(f"black_hat_{current_image_name}", blackhat_image)
 
@@ -39,14 +39,14 @@ for i in range(len(eye_images)):
     image_without_reflection = median_blur(removed_refection)
     display_image(f"median_blur_{current_image_name}", image_without_reflection)
 
-    #fourth step is to enhance the edges of the image
+    #third step is to enhance the edges of the image
     edged_image = canny_edge(image_without_reflection)
     display_image(f"CED_{current_image_name}", edged_image)
 
-    #fifth step get circular images
+    #fourth step get circular images
     circles = hough_circle(edged_image)
     if circles is not None:
-        #six mark circles co-ordinates
+        #fifth step mark circles co-ordinates
         inner_circle = draw_circle(circles, current_image)
         display_image(f"hough_circle_{current_image_name}", current_image)
         x, y = current_image.shape
