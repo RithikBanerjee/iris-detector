@@ -6,7 +6,7 @@ from math import hypot
 
 eye_images = []
 image_names = []
-#add other dataset and change the folder name
+
 #running the complete set of image database from the folder "DemoData"
 for filename in os.listdir("DemoData"):
     if filename is not None:
