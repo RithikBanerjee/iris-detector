@@ -7,13 +7,14 @@ from math import hypot
 eye_images = []
 image_names = []
 
-#running the complete set of image database from the folder "DemoData"
+#storing all eye images from folder "DemoData" in a collection
 for filename in os.listdir("DemoData"):
     if filename is not None:
         image = cv2.imread(os.path.join("DemoData", filename), 1)
         eye_images.append(image)
         image_names.append(filename.split('.')[0])
 
+#loop over all eye images in the collection
 for i in range(len(eye_images)):
     current_image_name = image_names[i]
     current_image = eye_images[i]
