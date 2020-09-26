@@ -4,6 +4,7 @@ import cv2
 import numpy
 from math import hypot
 
+#global variables
 eye_images = []
 image_names = []
 
